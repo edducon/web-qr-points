@@ -1,0 +1,26 @@
+import styled from 'styled-components'
+
+import { MEDIA_QUERIES } from '@shared/ui/consts'
+
+export const NextDayScheduleStyled = styled.div`
+    --time-width: 55px;
+
+    ${MEDIA_QUERIES.isNotMobile} {
+        width: 500px;
+        height: 500px;
+    }
+
+    ${MEDIA_QUERIES.isMobile} {
+        --time-width: 35px;
+        height: 400px;
+    }
+
+    position: relative;
+
+    & {
+        .calendar-wrapper {
+            scroll-snap-align: center;
+            min-width: 100%;
+        }
+    }
+`

@@ -1,0 +1,43 @@
+services:
+  lk-local:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && npm run start:external"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - lk_node_modules:/app/node_modules
+    environment:
+      - VITE_URL=https://e.mospolytech.ru
+      - VITE_OPEN=false
+
+  web:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:latest
+    ports:
+      - "80:80"
+      - "4000:80"
+    pull_policy: always
+  feat:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:feat4001
+    ports:
+      - "4001:80"
+  feat4002:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:feat4002
+    ports:
+      - "4002:80"
+  feat4003:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:feat4003
+    ports:
+      - "4003:80"
+  feat4004:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:feat4004
+    ports:
+      - "4004:80"
+  feat4005:
+    image: ghcr.io/lukyanovleo/mospolytech-lk-ghcr:feat4005
+    ports:
+      - "4005:80"
+
+volumes:
+  lk_node_modules:

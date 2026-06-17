@@ -1,0 +1,61 @@
+import React, { useMemo, useState } from 'react'
+import { useHistory } from 'react-router'
+
+import { useUnit } from 'effector-react'
+
+import { allowancesModel } from '@entities/allowances'
+
+import { ALLOWANCE_INFO_CUT } from '@shared/routing'
+import { userModel } from '@shared/session'
+import Flex from '@shared/ui/flex'
+import Select, { SelectPage } from '@shared/ui/select'
+import Table from '@shared/ui/table'
+
+import { getAllowancesColumns } from '../lib/get-allowances-columns'
+
+export const Approver = () => {
+    const history = useHistory()
+    const [allowances, jobs, setRole, setJobId] = useUnit([
+        allowancesModel.stores.allowances,
+        userModel.stores.jobRoles,
+        allowancesModel.events.setCurrentRole,
+        allowancesModel.events.setCurrentJobId,
+    ])
+
+    const [job, setJob] = useState<SelectPage | null>(() => {
+        const job = jobs && jobs.find((job) => job.roles.includes('Approver'))
+        if (!job) return null
+        return {
+            id: job.employeeId,
+            title: job.division,
+        }
+    })
+    const jobItems = useMemo(() => {
+        if (!jobs) return []
+        return jobs
+            .filter((job) => job.roles.includes('Approver'))
+            .map((item) => ({ id: item.employeeId, title: item.division })) as SelectPage[]
+    }, [jobs])
+
+    if (!jobs) return null
+    return (
+        <Flex gap="16px" d="column">
+            {jobItems.length > 1 && (
+                <Flex d="column" jc="flex-start" ai="flex-start">
+                    <Select items={jobItems} selected={job} setSelected={setJob} />
+                </Flex>
+            )}
+            <Table
+                loading={!allowances}
+                columns={getAllowancesColumns()}
+                data={job && allowances ? allowances[job.id].approverAllowances : null}
+                maxOnPage={7}
+                onRowClick={(allowance) => {
+                    setRole('Approver')
+                    setJobId(job?.id.toString() || '')
+                    history.push(ALLOWANCE_INFO_CUT + `/${allowance.id}`)
+                }}
+            />
+        </Flex>
+    )
+}
