@@ -107,6 +107,15 @@ export const StudentResult = styled.div`
     }
 `
 
+export const StatusBadge = styled.span<{ status: 'valid' | 'expired' | 'used' | 'not_found' }>`
+    width: fit-content;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: ${({ status }) => (status === 'valid' ? 'var(--greenTransparent)' : 'var(--redMain)')};
+    color: ${({ status }) => (status === 'valid' ? 'var(--invert-text)' : '#fff')} !important;
+    font-weight: 700 !important;
+`
+
 export const StatusMessage = styled.div<{ type?: 'error' | 'success' }>`
     padding: 10px;
     border-radius: var(--brLight);

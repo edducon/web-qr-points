@@ -5,7 +5,14 @@ import { FiCamera, FiCheckCircle, FiStopCircle } from 'react-icons/fi'
 import { Button, Title } from '@shared/ui/atoms'
 import { markQrPoints, QrMarkResponse, QrScanResponse, scanQrToken } from '@shared/api/physical-education'
 
-import { ManualTokenForm, ScannerCard, StatusMessage, StudentResult, VideoBox } from './styled'
+import { ManualTokenForm, ScannerCard, StatusBadge, StatusMessage, StudentResult, VideoBox } from './styled'
+
+const statusTitle: Record<QrScanResponse['status'], string> = {
+    valid: 'QR-код действителен',
+    expired: 'QR-код истек',
+    used: 'QR-код уже использован',
+    not_found: 'QR-код не найден',
+}
 
 const extractToken = (value: string) => {
     if (!value) return ''
@@ -190,7 +197,7 @@ export const TeacherQrScanner = () => {
                         <span>Группа: {student.groupNumber}</span>
                         <span>Код подтверждения: {scanResult.confirmationCode}</span>
                         <span>QR действует до: {formatDate(scanResult.expiresAt)}</span>
-                        <span>Статус: {scanResult.status}</span>
+                        <StatusBadge status={scanResult.status}>{statusTitle[scanResult.status]}</StatusBadge>
                     </div>
                 </StudentResult>
             )}
