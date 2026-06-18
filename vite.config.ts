@@ -24,7 +24,7 @@ type QrToken = {
     isUsed: boolean
 }
 
-const qrTtlMs = 20_000
+const qrTtlMs = 60_000
 const qrTokens = new Map<string, QrToken>()
 const qrRecords: Array<Record<string, unknown>> = []
 

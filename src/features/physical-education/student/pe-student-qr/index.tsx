@@ -12,7 +12,45 @@ type Props = {
 }
 
 const secondsUntil = (date: string) => Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / 1000))
-const qrRefreshSeconds = 20
+const qrRefreshSeconds = 60
+const qrSize = 290
+const qrLogoSrc = '/icon.png'
+
+const loadImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image()
+        image.onload = () => resolve(image)
+        image.onerror = reject
+        image.src = src
+    })
+
+const addLogoToQr = async (qrDataUrl: string) => {
+    const [qr, logo] = await Promise.all([loadImage(qrDataUrl), loadImage(qrLogoSrc)])
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+
+    if (!context) return qrDataUrl
+
+    canvas.width = qrSize
+    canvas.height = qrSize
+    context.drawImage(qr, 0, 0, qrSize, qrSize)
+
+    const logoSize = Math.round(qrSize * 0.19)
+    const logoPadding = Math.round(qrSize * 0.035)
+    const boxSize = logoSize + logoPadding * 2
+    const boxX = (qrSize - boxSize) / 2
+    const boxY = (qrSize - boxSize) / 2
+    const logoX = (qrSize - logoSize) / 2
+    const logoY = (qrSize - logoSize) / 2
+
+    context.fillStyle = '#ffffff'
+    context.beginPath()
+    context.roundRect(boxX, boxY, boxSize, boxSize, 12)
+    context.fill()
+    context.drawImage(logo, logoX, logoY, logoSize, logoSize)
+
+    return canvas.toDataURL('image/png')
+}
 
 const toPayload = (student: PEStudentProfile): QrStudentPayload => ({
     studentGuid: student.studentGuid,
@@ -41,13 +79,14 @@ export const StudentQrCard = ({ student }: Props) => {
             const nextToken = await createQrToken(payload)
             const scanUrl = `${window.location.origin}${window.location.pathname}#/physical-education/main?qrToken=${nextToken.token}`
             const image = await QRCode.toDataURL(scanUrl, {
-                width: 290,
+                width: qrSize,
                 margin: 1,
+                errorCorrectionLevel: 'H',
                 color: { dark: '#111111', light: '#ffffff' },
             })
 
             setTokenInfo(nextToken)
-            setQrImage(image)
+            setQrImage(await addLogoToQr(image))
             setSecondsLeft(secondsUntil(nextToken.expiresAt))
         } catch {
             setError('Не удалось создать QR-код. Попробуйте обновить страницу.')
