@@ -1,6 +1,7 @@
 import styled from 'styled-components'
 
 export const QrCard = styled.div`
+    position: relative;
     width: 100%;
     display: grid;
     grid-template-columns: minmax(220px, 320px) 1fr;
@@ -14,6 +15,27 @@ export const QrCard = styled.div`
     @media (max-width: 700px) {
         grid-template-columns: 1fr;
         padding: 12px;
+    }
+`
+
+export const CloseButton = styled.button`
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: var(--redMain);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: var(--block-shadow-1);
+
+    svg {
+        width: 20px;
+        height: 20px;
     }
 `
 
@@ -48,6 +70,37 @@ export const QrInfo = styled.div`
         color: var(--theme-mild-opposite);
         font-weight: 500;
         line-height: 1.35;
+    }
+`
+
+export const TimerPill = styled.div`
+    width: min(100%, 360px);
+    display: grid;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--brLight);
+    background: var(--theme-2);
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.25;
+
+    .timer-title {
+        font-size: 0.95rem;
+    }
+
+    .timer-track {
+        width: 100%;
+        height: 6px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--almostTransparentOpposite);
+    }
+
+    .timer-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--blue);
+        transition: width 0.45s linear;
     }
 `
 

@@ -6,6 +6,7 @@ import { IRoutes } from '../consts'
 import { employeeHiddenRoutes, employeeRoutes } from './employee'
 import { generalHiddenRoutes, generalRoutes } from './private'
 import { studentHiddenRoutes, studentRoutes } from './student'
+import { isDemoPeTeacherAccessEnabled } from '@shared/lib/dev-pe-access'
 
 export * from './private'
 export * from './student'
@@ -20,7 +21,19 @@ sample({
         ...generalRoutes,
         ...generalHiddenRoutes,
         ...(user?.user_status === 'stud'
-            ? { ...studentRoutes(), ...studentHiddenRoutes({ studentFinance: user.finance }) }
+            ? {
+                  ...studentRoutes(),
+                  ...studentHiddenRoutes({ studentFinance: user.finance }),
+                  ...(isDemoPeTeacherAccessEnabled()
+                      ? {
+                            'physical-education-teacher': {
+                                ...employeeRoutes({ allowancesRoles })['physical-education'],
+                                id: 'physical-education-teacher',
+                                title: 'Физическая культура (преп.)',
+                            },
+                        }
+                      : {}),
+              }
             : { ...employeeRoutes({ allowancesRoles }), ...employeeHiddenRoutes({ allowancesRoles }) }),
     }),
     target: $allRoutes,

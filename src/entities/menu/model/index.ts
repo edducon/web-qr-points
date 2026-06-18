@@ -8,6 +8,7 @@ import { Role } from '@shared/api/allowances/types'
 import { AdminLinks, User } from '@shared/api/model'
 import { UserSettings } from '@shared/api/settings'
 import { MenuType, REQUIRED_LEFTSIDE_BAR_CONFIG, REQUIRED_TEACHER_LEFTSIDE_BAR_CONFIG } from '@shared/consts'
+import { isDemoPeTeacherAccessEnabled } from '@shared/lib/dev-pe-access'
 import {
     IRoutes,
     Page,
@@ -32,6 +33,25 @@ const DEFAULT_HOME_CONFIG = ['settings', 'profile', 'chat', 'schedule', 'payment
 export const DEFAULT_STUDENT_MOBILE_CONFIG = ['home', 'schedule', 'acad-performance', 'all', 'profile']
 export const DEFAULT_PPS_MOBILE_CONFIG = ['home', 'schedule', 'alerts', 'all', 'profile']
 export const DEFAULT_STAFF_MOBILE_CONFIG = ['home', 'doclist', 'alerts', 'all', 'profile']
+
+const getDevPeTeacherRoute = (allowancesRoles: Role[]): IRoutes =>
+    ({
+        'physical-education-teacher': {
+            ...employeeRoutes({ allowancesRoles })['physical-education'],
+            id: 'physical-education-teacher',
+            title: 'Физическая культура (преп.)',
+        },
+    }) as IRoutes
+
+const getStudentRoutesWithDevPeTeacher = (user: User, allowancesRoles: Role[]): IRoutes => ({
+    ...studentRoutes(),
+    ...(isDemoPeTeacherAccessEnabled() ? getDevPeTeacherRoute(allowancesRoles) : {}),
+})
+
+const getStudentAllRoutesWithDevPeTeacher = (user: User, allowancesRoles: Role[]): IRoutes => ({
+    ...getStudentRoutesWithDevPeTeacher(user, allowancesRoles),
+    ...studentHiddenRoutes({ studentFinance: user.finance }),
+})
 
 const getLeftsideBarConfig = (user: User | null, settings: UserSettings, adminLinks: AdminLinks | null): MenuType => {
     if (!user) return []
@@ -118,7 +138,7 @@ const $leftSidebar = combine(
                       ...filterTeachersPrivateRoutes(adminLinks.data, allowancesRoles),
                       ...employeeHiddenRoutes({ allowancesRoles }),
                   }
-                : { ...studentRoutes(), ...studentHiddenRoutes({ studentFinance: user.finance }) },
+                : getStudentAllRoutesWithDevPeTeacher(user, allowancesRoles),
         )
     },
 )
@@ -138,7 +158,7 @@ const $homeRoutes = combine(
                       ...filterTeachersPrivateRoutes(adminLinks.data, allowancesRoles),
                       ...employeeHiddenRoutes({ allowancesRoles }),
                   }
-                : { ...studentRoutes(), ...studentHiddenRoutes({ studentFinance: user.finance }) },
+                : getStudentAllRoutesWithDevPeTeacher(user, allowancesRoles),
         )
     },
 )
@@ -179,16 +199,20 @@ const $menu = createStore<Menu>(DEFAULT_STORE)
                 ? filterTeachersPrivateRoutes(adminLinks, allowancesRoles)[
                       window.location.hash.slice(2, window.location.hash.length)
                   ]
-                : studentRoutes()[window.location.hash.slice(2, window.location.hash.length)],
+                : getStudentRoutesWithDevPeTeacher(user!, allowancesRoles)[
+                      window.location.hash.slice(2, window.location.hash.length)
+                  ],
         allRoutes:
             user?.user_status === 'staff'
                 ? {
                       ...filterTeachersPrivateRoutes(adminLinks, allowancesRoles),
                       ...employeeHiddenRoutes({ allowancesRoles }),
                   }
-                : { ...studentRoutes(), ...studentHiddenRoutes({ studentFinance: user?.finance }) },
+                : getStudentAllRoutesWithDevPeTeacher(user!, allowancesRoles),
         visibleRoutes:
-            user?.user_status === 'staff' ? filterTeachersPrivateRoutes(adminLinks, allowancesRoles) : studentRoutes(),
+            user?.user_status === 'staff'
+                ? filterTeachersPrivateRoutes(adminLinks, allowancesRoles)
+                : getStudentRoutesWithDevPeTeacher(user!, allowancesRoles),
     }))
     .on(changeNotifications, (oldData, { page, notifications }) => ({
         ...oldData,

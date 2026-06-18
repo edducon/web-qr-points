@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { resolve } from 'node:path'
 
 import { babel } from '@rollup/plugin-babel'
 import react from '@vitejs/plugin-react'
@@ -157,6 +159,26 @@ const qrDevApiPlugin = (): Plugin => ({
     },
 })
 
+const localIndexFallbackPlugin = (): Plugin => ({
+    name: 'lk-local-index-fallback',
+    configureServer(server) {
+        server.middlewares.use(async (request, response, next) => {
+            const path = request.url?.split('?')[0]
+
+            if (path === '/' || path === '/index.html') {
+                const html = await readFile(resolve(process.cwd(), 'index.html'), 'utf8')
+                const transformedHtml = await server.transformIndexHtml(request.url ?? '/', html)
+                response.statusCode = 200
+                response.setHeader('Content-Type', 'text/html; charset=utf-8')
+                response.end(transformedHtml)
+                return
+            }
+
+            next()
+        })
+    },
+})
+
 export default defineConfig((conf) => {
     const env = loadEnv(conf.mode, process.cwd())
 
@@ -219,6 +241,7 @@ export default defineConfig((conf) => {
                     ],
                 },
             }),
+            localIndexFallbackPlugin(),
             qrDevApiPlugin(),
             tsconfigPaths(),
             svgr(),

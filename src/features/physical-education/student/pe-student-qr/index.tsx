@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
-import { FiRefreshCw } from 'react-icons/fi'
+import { FiRefreshCw, FiX } from 'react-icons/fi'
 
 import { createQrToken, PEStudentProfile, QrStudentPayload, QrTokenResponse } from '@shared/api/physical-education'
 import { Button, Title } from '@shared/ui/atoms'
 
-import { QrCard, QrImageBox, QrInfo, StatusMessage } from './styled'
+import { CloseButton, QrCard, QrImageBox, QrInfo, StatusMessage, TimerPill } from './styled'
 
 type Props = {
     student: PEStudentProfile
 }
 
 const secondsUntil = (date: string) => Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / 1000))
+const qrRefreshSeconds = 20
 
 const toPayload = (student: PEStudentProfile): QrStudentPayload => ({
     studentGuid: student.studentGuid,
@@ -29,7 +30,7 @@ export const StudentQrCard = ({ student }: Props) => {
     const [visible, setVisible] = useState(false)
     const [tokenInfo, setTokenInfo] = useState<QrTokenResponse | null>(null)
     const [qrImage, setQrImage] = useState('')
-    const [secondsLeft, setSecondsLeft] = useState(20)
+    const [secondsLeft, setSecondsLeft] = useState(qrRefreshSeconds)
     const [error, setError] = useState('')
 
     const payload = useMemo(() => toPayload(student), [student])
@@ -49,7 +50,7 @@ export const StudentQrCard = ({ student }: Props) => {
             setQrImage(image)
             setSecondsLeft(secondsUntil(nextToken.expiresAt))
         } catch {
-            setError('Не удалось создать QR-код. Проверьте QR backend.')
+            setError('Не удалось создать QR-код. Попробуйте обновить страницу.')
         }
     }, [payload])
 
@@ -57,7 +58,7 @@ export const StudentQrCard = ({ student }: Props) => {
         if (!visible) return undefined
 
         createToken()
-        const refreshId = window.setInterval(createToken, 20_000)
+        const refreshId = window.setInterval(createToken, qrRefreshSeconds * 1000)
         return () => window.clearInterval(refreshId)
     }, [createToken, visible])
 
@@ -79,8 +80,24 @@ export const StudentQrCard = ({ student }: Props) => {
         )
     }
 
+    const timerProgress = Math.min(100, Math.max(0, (secondsLeft / qrRefreshSeconds) * 100))
+
     return (
         <QrCard>
+            <CloseButton
+                type="button"
+                aria-label="Скрыть QR-код"
+                title="Скрыть QR-код"
+                onClick={() => {
+                    setVisible(false)
+                    setTokenInfo(null)
+                    setQrImage('')
+                    setSecondsLeft(qrRefreshSeconds)
+                    setError('')
+                }}
+            >
+                <FiX />
+            </CloseButton>
             <QrImageBox>{qrImage && <img src={qrImage} alt="QR-код для выставления баллов" />}</QrImageBox>
             <QrInfo>
                 <Title size={4} align="left">
@@ -90,9 +107,13 @@ export const StudentQrCard = ({ student }: Props) => {
                     <span className="muted">Код подтверждения</span>
                     <div className="code">{tokenInfo?.confirmationCode ?? '--'}</div>
                 </div>
-                <span className="muted">
-                    QR действует {secondsLeft} сек. и содержит только временный одноразовый токен.
-                </span>
+                <TimerPill>
+                    <div className="timer-title">QR-код действует {secondsLeft} сек.</div>
+                    <div className="timer-track">
+                        <div className="timer-fill" style={{ width: `${timerProgress}%` }} />
+                    </div>
+                </TimerPill>
+                <span className="muted">Покажите QR и код подтверждения преподавателю.</span>
                 <Button
                     icon={<FiRefreshCw />}
                     text="Обновить QR"
